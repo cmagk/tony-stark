@@ -1,42 +1,68 @@
 # Tout = [(ώρα 0-23, θερμοκρασία)]
 import numpy as np
 from Tout import Tout
-from Wall import walls
+from Wall import walls, vertical_walls, roof_wall, glass_pane_wall
 from UFunction import U
 from MFunction import M
 
-wall_index = 0  # North Wall
-node_count = 10000000  # λ
-wall_thickness = walls[wall_index].GetThickness()
-deltaX = wall_thickness / node_count  # Δχ
-deltaT = 1  # Χρονικό βήμα
-absorption = 0.8
-radiation = 300
+WALL_INDEX = 0  # North Wall
+NODE_COUNT = 800  # λ
+WALL_THICKNESS = walls[WALL_INDEX].GetThickness()
+DELTAX = WALL_THICKNESS / NODE_COUNT  # Δχ
+DELTAT = 60  # Χρονικό βήμα
+ABSORPTION = 0.8
+RADIATION = 300
 # Συντελεστές συναγωγής
-hout = 23
-hin = 8
-Tin = 25
-u_pos = [i for i in range(2, node_count + 1)]  # 2 - node_count (list)
+HOUT = 23
+HIN = 8
+TIN = 22
+U_POS = [i for i in range(2, NODE_COUNT + 1)]  # 2 - node_count (list)
 
-temperatures_index = [i for i in range(1, node_count + 1)]
-wall_temperatures = list(zip(temperatures_index, [22 for i in range(node_count)]))  # Ti0
+TEMPS_INDEX = [i for i in range(1, NODE_COUNT + 1)]
+WALL_TEMPERATURES = list(zip(TEMPS_INDEX, [25 for i in range(NODE_COUNT)]))  # Ti0
 
-u_list = U(wall_index, node_count, wall_thickness, deltaX, hout, hin, u_pos).GetU()
-m_list = M(deltaX, deltaT, node_count, wall_thickness, wall_index)
+U_LIST = U(WALL_INDEX, NODE_COUNT, WALL_THICKNESS, DELTAX, HOUT, HIN, U_POS).GetU()
+M_LIST = M(DELTAX, DELTAT, NODE_COUNT, WALL_THICKNESS, WALL_INDEX)
 
 ################      right array
 
-right_array_first = [m_list[0][1] * wall_temperatures[0][1] + u_list[0][1] * Tout[0][1] + absorption * radiation]
+right_array_first = [M_LIST[0][1] * WALL_TEMPERATURES[0][1] + U_LIST[0][1] * Tout[0][1] + ABSORPTION * RADIATION]
 
 right_array_middle = []
 
-for i in range(1, node_count - 1):
-    right_array_middle.append(m_list[i][1] * wall_temperatures[i][1] + u_list[i][1] * Tout[0][1] + absorption * radiation)
+for i in range(1, NODE_COUNT - 1):
+    right_array_middle.append(M_LIST[i][1] * WALL_TEMPERATURES[i][1] + U_LIST[i][1] * Tout[0][1] + ABSORPTION * RADIATION)
 
-right_array_last = [m_list[-1][1] * wall_temperatures[-1][1] + u_list[-1][1] * Tin]
+right_array_last = [M_LIST[-1][1] * WALL_TEMPERATURES[-1][1] + U_LIST[-1][1] * TIN]
 
 right_list = [*right_array_first, *right_array_middle, *right_array_last]
 
-nplist = np.array(right_list)
+np_right = np.array(right_list)
 
-print(nplist[:, None])
+################      left array
+
+np_left = np.zeros((NODE_COUNT, NODE_COUNT))
+
+
+def GetValueFromIterCountForMainDiagonal(iter):
+    m = M_LIST[iter][1]
+    first_u = U_LIST[iter][1]
+    second_u = U_LIST[iter + 1][1]
+    total = m + first_u + second_u
+    return total
+
+for i in range(NODE_COUNT):
+    np_left[i][i] = GetValueFromIterCountForMainDiagonal(i)
+
+for i in range(0, NODE_COUNT - 1):
+    np_left[i][i+1] = -U_LIST[i + 1][1]
+    np_left[i+1][i] = np_left[i][i+1]
+
+np.set_printoptions(suppress=True,linewidth=np.nan)
+
+solved = np.linalg.solve(np_left, np_right)
+new_T = list(zip(TEMPS_INDEX, solved))
+
+q_wall = U_LIST[-1][1] * (new_T[-1][1] - TIN)
+
+print(q_wall)
