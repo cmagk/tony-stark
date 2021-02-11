@@ -1,15 +1,17 @@
 # Tout = [(ώρα 0-23, θερμοκρασία)]
 import numpy as np
 from Tout import Tout
-from Wall import walls, vertical_walls, roof_wall, glass_pane_wall
+from Wall import walls
 from UFunction import U
 from MFunction import M
+from QFunction import GetQ, GetQInternal1, GetQInternal2
+from Charge import GetCharge
 
-WALL_INDEX = 0  # North Wall
-NODE_COUNT = 800  # λ
-WALL_THICKNESS = walls[WALL_INDEX].GetThickness()
+WALLS_INDEX = {"NORTH": 0, "WEST": 1, "EAST": 2, "ROOF": 3, "INTERNAL": 4, "GLASSPANE": 5 }
+NODE_COUNT = 20  # λ
+WALL_THICKNESS = walls[WALLS_INDEX["NORTH"]].GetThickness()
 DELTAX = WALL_THICKNESS / NODE_COUNT  # Δχ
-DELTAT = 60  # Χρονικό βήμα
+DELTAT = 60  # Χρονικό βήμα sec
 ABSORPTION = 0.8
 RADIATION = 300
 # Συντελεστές συναγωγής
@@ -21,48 +23,68 @@ U_POS = [i for i in range(2, NODE_COUNT + 1)]  # 2 - node_count (list)
 TEMPS_INDEX = [i for i in range(1, NODE_COUNT + 1)]
 WALL_TEMPERATURES = list(zip(TEMPS_INDEX, [25 for i in range(NODE_COUNT)]))  # Ti0
 
-U_LIST = U(WALL_INDEX, NODE_COUNT, WALL_THICKNESS, DELTAX, HOUT, HIN, U_POS).GetU()
-M_LIST = M(DELTAX, DELTAT, NODE_COUNT, WALL_THICKNESS, WALL_INDEX)
+U_LIST = U(WALLS_INDEX["NORTH"], NODE_COUNT, WALL_THICKNESS, DELTAX, HOUT, HIN, U_POS).GetU()
+M_LIST = M(DELTAX, DELTAT, NODE_COUNT, WALL_THICKNESS, WALLS_INDEX["NORTH"])
 
-################      right array
+q_north_wall = GetQ(M_LIST, WALL_TEMPERATURES, U_LIST, Tout, ABSORPTION, RADIATION, NODE_COUNT, TEMPS_INDEX, TIN)
+q_west_wall = GetQ(M_LIST, WALL_TEMPERATURES, U_LIST, Tout, ABSORPTION, RADIATION, NODE_COUNT, TEMPS_INDEX, TIN)
+q_east_wall = GetQ(M_LIST, WALL_TEMPERATURES, U_LIST, Tout, ABSORPTION, RADIATION, NODE_COUNT, TEMPS_INDEX, TIN)
+q_glasspane_wall = GetQ(M_LIST, WALL_TEMPERATURES, U_LIST, Tout, ABSORPTION, RADIATION, NODE_COUNT, TEMPS_INDEX, TIN)
 
-right_array_first = [M_LIST[0][1] * WALL_TEMPERATURES[0][1] + U_LIST[0][1] * Tout[0][1] + ABSORPTION * RADIATION]
+north_wall_charge = GetCharge(q_north_wall, walls[WALLS_INDEX["NORTH"]].GetArea())
+west_wall_charge = GetCharge(q_west_wall, walls[WALLS_INDEX["WEST"]].GetArea())
+east_wall_charge = GetCharge(q_east_wall, walls[WALLS_INDEX["EAST"]].GetArea())
+glasspane_wall_charge = GetCharge(q_glasspane_wall, walls[WALLS_INDEX["GLASSPANE"]].GetArea())
 
-right_array_middle = []
+#########################################
 
-for i in range(1, NODE_COUNT - 1):
-    right_array_middle.append(M_LIST[i][1] * WALL_TEMPERATURES[i][1] + U_LIST[i][1] * Tout[0][1] + ABSORPTION * RADIATION)
+ROOF_NODE_COUNT = 20
+ROOF_WALL_THICKNESS = walls[WALLS_INDEX["ROOF"]].GetThickness()
+ROOF_DELTAX = ROOF_WALL_THICKNESS / ROOF_NODE_COUNT
 
-right_array_last = [M_LIST[-1][1] * WALL_TEMPERATURES[-1][1] + U_LIST[-1][1] * TIN]
+ROOF_U_LIST = U(WALLS_INDEX["ROOF"], ROOF_NODE_COUNT, ROOF_WALL_THICKNESS, ROOF_DELTAX, HOUT, HIN, U_POS).GetU()
+ROOF_M_LIST = M_LIST = M(ROOF_DELTAX, DELTAT, ROOF_NODE_COUNT, ROOF_WALL_THICKNESS, WALLS_INDEX["ROOF"])
 
-right_list = [*right_array_first, *right_array_middle, *right_array_last]
+q_roof_wall = GetQ(ROOF_M_LIST, WALL_TEMPERATURES, ROOF_U_LIST, Tout, ABSORPTION, RADIATION, ROOF_NODE_COUNT, TEMPS_INDEX, TIN)
 
-np_right = np.array(right_list)
+roof_wall_charge = GetCharge(q_roof_wall, walls[WALLS_INDEX["ROOF"]].GetArea())
 
-################      left array
+########################################################################################
 
-np_left = np.zeros((NODE_COUNT, NODE_COUNT))
+INTERNAL_NODE_COUNT = 20
+INTERNAL_WALL_THICKNESS = walls[WALLS_INDEX["INTERNAL"]].GetThickness()
+INTERNAL_DELTAX = INTERNAL_WALL_THICKNESS / INTERNAL_NODE_COUNT
 
+INTERNAL_U_LIST = U(WALLS_INDEX["INTERNAL"], INTERNAL_NODE_COUNT, INTERNAL_WALL_THICKNESS, INTERNAL_DELTAX, HOUT, HIN, U_POS).GetU()
+INTERNAL_M_LIST = M_LIST = M(INTERNAL_DELTAX, DELTAT, INTERNAL_NODE_COUNT, INTERNAL_WALL_THICKNESS, WALLS_INDEX["INTERNAL"])
 
-def GetValueFromIterCountForMainDiagonal(iter):
-    m = M_LIST[iter][1]
-    first_u = U_LIST[iter][1]
-    second_u = U_LIST[iter + 1][1]
-    total = m + first_u + second_u
-    return total
+q_internal_wall1 = GetQInternal1(INTERNAL_M_LIST, WALL_TEMPERATURES, INTERNAL_U_LIST, ABSORPTION, RADIATION, INTERNAL_NODE_COUNT, TEMPS_INDEX, TIN, WALLS_INDEX)
+q_internal_wall2 = GetQInternal2(INTERNAL_M_LIST, WALL_TEMPERATURES, INTERNAL_U_LIST, ABSORPTION, RADIATION, INTERNAL_NODE_COUNT, TEMPS_INDEX, TIN, WALLS_INDEX)
 
-for i in range(NODE_COUNT):
-    np_left[i][i] = GetValueFromIterCountForMainDiagonal(i)
+internal_wall_charge1 = GetCharge(q_internal_wall1, walls[WALLS_INDEX["INTERNAL"]].GetArea())
+internal_wall_charge2 = GetCharge(q_internal_wall2, walls[WALLS_INDEX["INTERNAL"]].GetArea())
 
-for i in range(0, NODE_COUNT - 1):
-    np_left[i][i+1] = -U_LIST[i + 1][1]
-    np_left[i+1][i] = np_left[i][i+1]
+SQ = north_wall_charge + west_wall_charge + east_wall_charge + roof_wall_charge + internal_wall_charge1 + internal_wall_charge2 + glasspane_wall_charge
 
-np.set_printoptions(suppress=True,linewidth=np.nan)
+########################################################################################
 
-solved = np.linalg.solve(np_left, np_right)
-new_T = list(zip(TEMPS_INDEX, solved))
+# Φορτίο ανανέωσης
 
-q_wall = U_LIST[-1][1] * (new_T[-1][1] - TIN)
+VOLUME = 10 * 25 * 3
+RAIR = 1.18
+CAIR = 1005
 
-print(q_wall)
+Mair = RAIR * VOLUME
+mass_provision = 2.5 * Mair / 3600
+
+Qinfilt = mass_provision * CAIR * (Tout[0][1] - TIN)
+
+# Θερμική μάζα χώρου
+F = 2
+mc_air = RAIR * VOLUME * CAIR
+
+mc_area = F * mc_air
+
+new_tin = TIN + (SQ * DELTAT) / mc_area
+
+print(new_tin)

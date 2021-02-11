@@ -26,7 +26,7 @@ class U:
         computed = []
         for i in range(len(conductivities)):
             if len(conductivities[i]) == 1:
-                computed.append(1 / (self.deltaX / (2 * conductivities[i][0])))
+                computed.append(1 / (self.deltaX / conductivities[i][0]))
             else:
                 computed.append(1 / ((self.deltaX / (2 * conductivities[i][0])) + (self.deltaX / (2 * conductivities[i][1]))))
 

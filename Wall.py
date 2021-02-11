@@ -79,7 +79,7 @@ class GlassPaneWall(VerticalWall):
         self.glass_pane = glass_pane
 
     def GetArea(self):
-        return self.length * self.height
+        return self.length * self.height - glass_pane.GetArea()
 
 
 class GlassPane:
@@ -92,6 +92,8 @@ class GlassPane:
     def GetArea(self):
         return self.length * self.height
 
+
+# Thickness is in cm
 
 north_west_east_components = [
     StructuralComponent(0.08, 1100, 1100, 2.5),  # Θερμομονωτικό επίχρισμα (εξωτερικά)
@@ -130,5 +132,4 @@ glass_pane_wall = GlassPaneWall(north_west_east_components, 25, 3, glass_pane)
 
 walls = [north_wall, west_wall, east_wall, roof_wall, internal_wall, glass_pane_wall]
 
-vertical_walls = [north_wall, west_wall, east_wall, internal_wall]
 
