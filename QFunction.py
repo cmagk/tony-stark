@@ -4,13 +4,13 @@ from Wall import walls
 def GetQ(M_LIST, WALL_TEMPERATURES, U_LIST, Tout, ABSORPTION, RADIATION, NODE_COUNT, TEMPS_INDEX, TIN):
     ################      right array
 
-    right_array_first = [M_LIST[0][1] * WALL_TEMPERATURES[0][1] + U_LIST[0][1] * Tout[0][1] + ABSORPTION * RADIATION]
+    right_array_first = [M_LIST[0][1] * WALL_TEMPERATURES[0][1] + U_LIST[0][1] * Tout + ABSORPTION * RADIATION]
 
     right_array_middle = []
 
     for i in range(1, NODE_COUNT - 1):
         right_array_middle.append(
-            M_LIST[i][1] * WALL_TEMPERATURES[i][1] + U_LIST[i][1] * Tout[0][1] + ABSORPTION * RADIATION)
+            M_LIST[i][1] * WALL_TEMPERATURES[i][1] + U_LIST[i][1] * Tout + ABSORPTION * RADIATION)
 
     right_array_last = [M_LIST[-1][1] * WALL_TEMPERATURES[-1][1] + U_LIST[-1][1] * TIN]
 
@@ -42,7 +42,7 @@ def GetQ(M_LIST, WALL_TEMPERATURES, U_LIST, Tout, ABSORPTION, RADIATION, NODE_CO
     new_T = list(zip(TEMPS_INDEX, solved))
 
     q_wall = U_LIST[-1][1] * (new_T[-1][1] - TIN)
-    return q_wall
+    return (q_wall, new_T)
 
 def GetQInternal1(M_LIST, WALL_TEMPERATURES, U_LIST, ABSORPTION, RADIATION, NODE_COUNT, TEMPS_INDEX, TIN, walls_index):
     ################      right array
@@ -89,7 +89,7 @@ def GetQInternal1(M_LIST, WALL_TEMPERATURES, U_LIST, ABSORPTION, RADIATION, NODE
     new_T = list(zip(TEMPS_INDEX, solved))
 
     q_wall = U_LIST[0][1] * (new_T[0][1] - TIN)
-    return q_wall
+    return (q_wall, new_T)
 
 def GetQInternal2(M_LIST, WALL_TEMPERATURES, U_LIST, ABSORPTION, RADIATION, NODE_COUNT, TEMPS_INDEX, TIN, walls_index):
     ################      right array
