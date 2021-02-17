@@ -30,9 +30,9 @@ RADIATION = 300
 HOUT = 23
 HIN = 8
 
-
-tin = 22
+tin = 26
 tins = []
+
 
 # TODO change function name
 def IsTempsClose(temp1, temp2):
@@ -40,47 +40,52 @@ def IsTempsClose(temp1, temp2):
         return True
     return False
 
+
 # TODO make first day not return counter
-final_temps = []
 isFound = False
 loops_count = 1
+tins = []
+temps_index_ext = [i for i in range(1, node_count["EXTERNAL"] + 1)]
+temps_index_roof = [i for i in range(1, node_count["ROOF"] + 1)]
+temps_index_internal = [i for i in range(1, node_count["INTERNAL"] + 1)]
+node_temperatures = {
+    "EXTERNAL": {
+        "NORTH": list(zip(temps_index_ext, [22 for i in range(node_count["EXTERNAL"])])),
+        "WEST": list(zip(temps_index_ext, [22 for i in range(node_count["EXTERNAL"])])),
+        "EAST": list(zip(temps_index_ext, [22 for i in range(node_count["EXTERNAL"])])),
+        "GLASS_PANE": list(zip(temps_index_ext, [22 for i in range(node_count["EXTERNAL"])]))
+    },
+    "ROOF": list(zip(temps_index_roof, [22 for i in range(node_count["ROOF"])])),
+    "INTERNAL": list(zip(temps_index_internal, [22 for i in range(node_count["INTERNAL"])]))
+}
 
-while isFound == False:
+print(Tout)
+
+while not isFound:
     counter = 0
     temps_close_counter = 0
-    day_temps = []
+    daily_tins = []
     while counter < 3600 * 24:
         time_int = math.floor(counter / 3600)
         tout = Tout[time_int][1]
-        tins = []
         upos_dictionary = {
             "EXTERNAL": [i for i in range(2, node_count["EXTERNAL"] + 1)],
             "ROOF": [i for i in range(2, node_count["ROOF"] + 1)],
             "INTERNAL": [i for i in range(2, node_count["INTERNAL"] + 1)]
         }
 
-        U_LIST = U(WALLS_INDEX["NORTH"], node_count["EXTERNAL"], WALL_THICKNESS, DELTAX, HOUT, HIN, upos_dictionary["EXTERNAL"]).GetU()
+        U_LIST = U(WALLS_INDEX["NORTH"], node_count["EXTERNAL"], WALL_THICKNESS, DELTAX, HOUT, HIN,
+                   upos_dictionary["EXTERNAL"]).GetU()
         M_LIST = M(DELTAX, DELTAT, node_count["EXTERNAL"], WALL_THICKNESS, WALLS_INDEX["NORTH"])
 
-        temps_index_ext = [i for i in range(1, node_count["EXTERNAL"] + 1)]
-        temps_index_roof = [i for i in range(1, node_count["ROOF"] + 1)]
-        temps_index_internal = [i for i in range(1, node_count["INTERNAL"] + 1)]
-
-        node_temperatures = {
-            "EXTERNAL": {
-              "NORTH": list(zip(temps_index_ext, [25 for i in range(node_count["EXTERNAL"])])),
-              "WEST": list(zip(temps_index_ext, [25 for i in range(node_count["EXTERNAL"])])),
-              "EAST": list(zip(temps_index_ext, [25 for i in range(node_count["EXTERNAL"])])),
-              "GLASS_PANE": list(zip(temps_index_ext, [25 for i in range(node_count["EXTERNAL"])]))
-            },
-            "ROOF": list(zip(temps_index_roof, [25 for i in range(node_count["ROOF"])])),
-            "INTERNAL": list(zip(temps_index_internal, [25 for i in range(node_count["INTERNAL"])]))
-        }
-
-        (q_north_wall, new_T_north) = GetQ(M_LIST, node_temperatures["EXTERNAL"]["NORTH"], U_LIST, tout, ABSORPTION, RADIATION, node_count["EXTERNAL"], temps_index_ext, tin)
-        (q_west_wall, new_T_west) = GetQ(M_LIST, node_temperatures["EXTERNAL"]["WEST"], U_LIST, tout, ABSORPTION, RADIATION, node_count["EXTERNAL"], temps_index_ext, tin)
-        (q_east_wall, new_T_east) = GetQ(M_LIST, node_temperatures["EXTERNAL"]["EAST"], U_LIST, tout, ABSORPTION, RADIATION, node_count["EXTERNAL"], temps_index_ext, tin)
-        (q_glasspane_wall, new_T_glasspane) = GetQ(M_LIST, node_temperatures["EXTERNAL"]["GLASS_PANE"], U_LIST, tout, ABSORPTION, RADIATION, node_count["EXTERNAL"], temps_index_ext, tin)
+        (q_north_wall, new_T_north) = GetQ(M_LIST, node_temperatures["EXTERNAL"]["NORTH"], U_LIST, tout, ABSORPTION,
+                                           RADIATION, node_count["EXTERNAL"], temps_index_ext, tin)
+        (q_west_wall, new_T_west) = GetQ(M_LIST, node_temperatures["EXTERNAL"]["WEST"], U_LIST, tout, ABSORPTION,
+                                         RADIATION, node_count["EXTERNAL"], temps_index_ext, tin)
+        (q_east_wall, new_T_east) = GetQ(M_LIST, node_temperatures["EXTERNAL"]["EAST"], U_LIST, tout, ABSORPTION,
+                                         RADIATION, node_count["EXTERNAL"], temps_index_ext, tin)
+        (q_glasspane_wall, new_T_glasspane) = GetQ(M_LIST, node_temperatures["EXTERNAL"]["GLASS_PANE"], U_LIST, tout,
+                                                   ABSORPTION, RADIATION, node_count["EXTERNAL"], temps_index_ext, tin)
 
         node_temperatures["EXTERNAL"]["NORTH"] = new_T_north
         node_temperatures["EXTERNAL"]["WEST"] = new_T_west
@@ -97,10 +102,12 @@ while isFound == False:
         ROOF_WALL_THICKNESS = walls[WALLS_INDEX["ROOF"]].GetThickness()
         ROOF_DELTAX = ROOF_WALL_THICKNESS / node_count["ROOF"]
 
-        ROOF_U_LIST = U(WALLS_INDEX["ROOF"], node_count["ROOF"], ROOF_WALL_THICKNESS, ROOF_DELTAX, HOUT, HIN, upos_dictionary["ROOF"]).GetU()
+        ROOF_U_LIST = U(WALLS_INDEX["ROOF"], node_count["ROOF"], ROOF_WALL_THICKNESS, ROOF_DELTAX, HOUT, HIN,
+                        upos_dictionary["ROOF"]).GetU()
         ROOF_M_LIST = M_LIST = M(ROOF_DELTAX, DELTAT, node_count["ROOF"], ROOF_WALL_THICKNESS, WALLS_INDEX["ROOF"])
 
-        (q_roof_wall, new_T_roof) = GetQ(ROOF_M_LIST, node_temperatures["ROOF"], ROOF_U_LIST, tout, ABSORPTION, RADIATION, node_count["ROOF"], temps_index_roof, tin)
+        (q_roof_wall, new_T_roof) = GetQ(ROOF_M_LIST, node_temperatures["ROOF"], ROOF_U_LIST, tout, ABSORPTION,
+                                         RADIATION, node_count["ROOF"], temps_index_roof, tin)
 
         node_temperatures["ROOF"] = new_T_roof
 
@@ -111,11 +118,17 @@ while isFound == False:
         INTERNAL_WALL_THICKNESS = walls[WALLS_INDEX["INTERNAL"]].GetThickness()
         INTERNAL_DELTAX = INTERNAL_WALL_THICKNESS / node_count["INTERNAL"]
 
-        INTERNAL_U_LIST = U(WALLS_INDEX["INTERNAL"], node_count["INTERNAL"], INTERNAL_WALL_THICKNESS, INTERNAL_DELTAX, HOUT, HIN, upos_dictionary["INTERNAL"]).GetU()
-        INTERNAL_M_LIST = M_LIST = M(INTERNAL_DELTAX, DELTAT, node_count["INTERNAL"], INTERNAL_WALL_THICKNESS, WALLS_INDEX["INTERNAL"])
+        INTERNAL_U_LIST = U(WALLS_INDEX["INTERNAL"], node_count["INTERNAL"], INTERNAL_WALL_THICKNESS, INTERNAL_DELTAX,
+                            HOUT, HIN, upos_dictionary["INTERNAL"]).GetU()
+        INTERNAL_M_LIST = M_LIST = M(INTERNAL_DELTAX, DELTAT, node_count["INTERNAL"], INTERNAL_WALL_THICKNESS,
+                                     WALLS_INDEX["INTERNAL"])
 
-        (q_internal_wall1, new_T_internal) = GetQInternal1(INTERNAL_M_LIST, node_temperatures["INTERNAL"], INTERNAL_U_LIST, ABSORPTION, RADIATION, node_count["INTERNAL"], temps_index_internal, tin, WALLS_INDEX)
-        q_internal_wall2 = GetQInternal2(INTERNAL_M_LIST, node_temperatures["INTERNAL"], INTERNAL_U_LIST, ABSORPTION, RADIATION, node_count["INTERNAL"], temps_index_internal, tin, WALLS_INDEX)
+        (q_internal_wall1, new_T_internal) = GetQInternal1(INTERNAL_M_LIST, node_temperatures["INTERNAL"],
+                                                           INTERNAL_U_LIST, ABSORPTION, RADIATION,
+                                                           node_count["INTERNAL"], temps_index_internal, tin,
+                                                           WALLS_INDEX)
+        q_internal_wall2 = GetQInternal2(INTERNAL_M_LIST, node_temperatures["INTERNAL"], INTERNAL_U_LIST, ABSORPTION,
+                                         RADIATION, node_count["INTERNAL"], temps_index_internal, tin, WALLS_INDEX)
 
         node_temperatures["INTERNAL"] = new_T_internal
 
@@ -145,22 +158,23 @@ while isFound == False:
 
         tin = tin + (SQ * DELTAT) / mc_area
         counter += DELTAT
-        tins.append(tin)
-        print(tins)
+        daily_tins.append(tin)
 
-    final_temps.append(tins)
-    print(loops_count)
+    tins.append(daily_tins)
+    #  tin = tins[-1][-1]
 
-    if len(final_temps) > 5:
-        for i in range(len(final_temps)):
-            if (final_temps[i][0] != final_temps[-1][0] and IsTempsClose(final_temps[i][0], final_temps[i + 1][0])) and temps_close_counter == 2:
-                isFound = True
-                break
-            elif (final_temps[i][0] != final_temps[-1][0] and IsTempsClose(final_temps[i][0], final_temps[i + 1][0])):
-                temps_close_counter += 1
-            else:
-                continue
+    # if len(final_temps) > 5:
+    #     for i in range(len(final_temps)):
+    #         if (final_temps[i][0] != final_temps[-1][0] and IsTempsClose(final_temps[i][0], final_temps[i + 1][
+    #             0])) and temps_close_counter == 2:
+    #             isFound = True
+    #             break
+    #         elif (final_temps[i][0] != final_temps[-1][0] and IsTempsClose(final_temps[i][0], final_temps[i + 1][0])):
+    #             temps_close_counter += 1
+    #         else:
+    #             continue
+
+
 
     loops_count += 1
-
-print(loops_count)
+    print(tins[-1][-1])
