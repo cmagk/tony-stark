@@ -1,5 +1,7 @@
 # Tout = [(ώρα 0-23, θερμοκρασία)]
+import matplotlib.pyplot as plt
 import numpy as np
+from scipy.interpolate import make_interp_spline, BSpline
 from Tout import Tout
 from Wall import walls
 from UFunction import U
@@ -36,6 +38,7 @@ tins = []
 isFound = False
 loops_count = 1
 tins = []
+delta_t_tins = []
 temps_index_ext = [i for i in range(1, node_count["EXTERNAL"] + 1)]
 temps_index_roof = [i for i in range(1, node_count["ROOF"] + 1)]
 temps_index_internal = [i for i in range(1, node_count["INTERNAL"] + 1)]
@@ -58,6 +61,7 @@ while not isFound:
     temps_close_counter = 0
     daily_tins = []
     while counter < 3600 * 24:
+        delta_t_tins.append(counter)
         time_int = math.floor(counter / 3600)
         tout = Tout[time_int][1]
         rad_list = [0, 0, 0, 0, 0, 0, 20, 40, 40, 50, 50, 100, 120, 250, 300, 200, 100, 50, 50, 40, 40, 0, 0, 0]
@@ -163,6 +167,12 @@ while not isFound:
         if tins[-1][-1] - tins[-2][-1] <= 0.00000000005:
             break
 
-    #break
+    break
 
     loops_count += 1
+
+
+plt.ylabel('Εσωτερική θερμοκρασία αέρος')
+plt.xlabel('Χρόνος(sec)')
+plt.plot(delta_t_tins, tins[-1])
+plt.show()
