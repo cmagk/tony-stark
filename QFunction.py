@@ -41,6 +41,7 @@ def GetQ(M_LIST, WALL_TEMPERATURES, U_LIST, Tout, ABSORPTION, RADIATION, NODE_CO
     solved = np.linalg.solve(np_left, np_right)
     new_T = list(zip(TEMPS_INDEX, solved))
 
+    # Θερμοροή εξωτερικών τοίχων
     q_wall = U_LIST[-1][1] * (new_T[-1][1] - TIN)
     return (q_wall, new_T)
 

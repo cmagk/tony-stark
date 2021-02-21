@@ -93,8 +93,6 @@ class GlassPane:
         return self.length * self.height
 
 
-# Thickness is in cm
-
 north_west_east_components = [
     StructuralComponent(0.08, 1100, 1100, 2.5),  # Θερμομονωτικό επίχρισμα (εξωτερικά)
     StructuralComponent(0.49, 1200, 1000, 9),  # Οπτοπλινθοδομή με πλήρεις οπτοπλίνθους
@@ -116,7 +114,7 @@ internal_wall_components = [
     StructuralComponent(0.87, 1800, 1000, 2.5)  # Ασβεστοκονίαμα
 ]
 
-north_wall = VerticalWall(north_west_east_components, 25, 3)
+north_wall = VerticalWall(north_west_east_components, 25, 3)  # Μήκος, ύψος
 
 west_wall = VerticalWall(north_west_east_components, 10, 3)
 
@@ -124,9 +122,9 @@ east_wall = VerticalWall(north_west_east_components, 10, 3)
 
 internal_wall = VerticalWall(internal_wall_components, 25, 3)
 
-roof_wall = RoofWall(roof_components, 10, 25)
+roof_wall = RoofWall(roof_components, 10, 25)  # Μήκος, πλάτος
 
-glass_pane = GlassPane(15, 2, 2.8, 0.68)  # heat_capacity Δίδυμος υαλοπίνακας με διάκενο αέρα 12 mm // Πίνακας 3.16
+glass_pane = GlassPane(15, 2, 2.8, 0.68)  # heat_capacity Δίδυμος υαλοπίνακας με διάκενο αέρα 12 mm // Πίνακας 3.16 (ΤΟΤΕΕ)
 
 glass_pane_wall = GlassPaneWall(north_west_east_components, 25, 3, glass_pane)
 

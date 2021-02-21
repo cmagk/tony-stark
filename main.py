@@ -24,22 +24,13 @@ node_count = {
 WALL_THICKNESS = walls[WALLS_INDEX["NORTH"]].GetThickness()
 DELTAX = WALL_THICKNESS / node_count["EXTERNAL"]  # Δχ
 ABSORPTION = 0.8
-RADIATION = 300
 
 # Συντελεστές συναγωγής
 HOUT = 23
 HIN = 8
 
-tin = 26
+tin = 22
 tins = []
-
-
-# TODO change function name
-def IsTempsClose(temp1, temp2):
-    if math.floor(temp1 * 100000) == math.floor(temp2 * 100000):
-        return True
-    return False
-
 
 # TODO make first day not return counter
 isFound = False
@@ -48,15 +39,16 @@ tins = []
 temps_index_ext = [i for i in range(1, node_count["EXTERNAL"] + 1)]
 temps_index_roof = [i for i in range(1, node_count["ROOF"] + 1)]
 temps_index_internal = [i for i in range(1, node_count["INTERNAL"] + 1)]
+temp = 20.5
 node_temperatures = {
     "EXTERNAL": {
-        "NORTH": list(zip(temps_index_ext, [22 for i in range(node_count["EXTERNAL"])])),
-        "WEST": list(zip(temps_index_ext, [22 for i in range(node_count["EXTERNAL"])])),
-        "EAST": list(zip(temps_index_ext, [22 for i in range(node_count["EXTERNAL"])])),
-        "GLASS_PANE": list(zip(temps_index_ext, [22 for i in range(node_count["EXTERNAL"])]))
+        "NORTH": list(zip(temps_index_ext, [temp for i in range(node_count["EXTERNAL"])])),
+        "WEST": list(zip(temps_index_ext, [temp for i in range(node_count["EXTERNAL"])])),
+        "EAST": list(zip(temps_index_ext, [temp for i in range(node_count["EXTERNAL"])])),
+        "GLASS_PANE": list(zip(temps_index_ext, [temp for i in range(node_count["EXTERNAL"])]))
     },
-    "ROOF": list(zip(temps_index_roof, [22 for i in range(node_count["ROOF"])])),
-    "INTERNAL": list(zip(temps_index_internal, [22 for i in range(node_count["INTERNAL"])]))
+    "ROOF": list(zip(temps_index_roof, [temp for i in range(node_count["ROOF"])])),
+    "INTERNAL": list(zip(temps_index_internal, [temp for i in range(node_count["INTERNAL"])]))
 }
 
 print(Tout)
@@ -68,6 +60,8 @@ while not isFound:
     while counter < 3600 * 24:
         time_int = math.floor(counter / 3600)
         tout = Tout[time_int][1]
+        rad_list = [0, 0, 0, 0, 0, 0, 20, 40, 40, 50, 50, 100, 120, 250, 300, 200, 100, 50, 50, 40, 40, 0, 0, 0]
+        RADIATION = rad_list[time_int]
         upos_dictionary = {
             "EXTERNAL": [i for i in range(2, node_count["EXTERNAL"] + 1)],
             "ROOF": [i for i in range(2, node_count["ROOF"] + 1)],
@@ -148,7 +142,7 @@ while not isFound:
         Mair = RAIR * VOLUME
         mass_provision = 2.5 * Mair / 3600
 
-        Qinfilt = mass_provision * CAIR * (tout - tin)  # TODO
+        Qinfilt = mass_provision * CAIR * (tout - tin)
 
         # Θερμική μάζα χώρου
         F = 2
@@ -156,25 +150,19 @@ while not isFound:
 
         mc_area = F * mc_air
 
+        SQ += Qinfilt
+
         tin = tin + (SQ * DELTAT) / mc_area
         counter += DELTAT
         daily_tins.append(tin)
 
     tins.append(daily_tins)
-    #  tin = tins[-1][-1]
+    print(tins[-1][-1])
 
-    # if len(final_temps) > 5:
-    #     for i in range(len(final_temps)):
-    #         if (final_temps[i][0] != final_temps[-1][0] and IsTempsClose(final_temps[i][0], final_temps[i + 1][
-    #             0])) and temps_close_counter == 2:
-    #             isFound = True
-    #             break
-    #         elif (final_temps[i][0] != final_temps[-1][0] and IsTempsClose(final_temps[i][0], final_temps[i + 1][0])):
-    #             temps_close_counter += 1
-    #         else:
-    #             continue
+    if loops_count > 2:
+        if tins[-1][-1] - tins[-2][-1] <= 0.00000000005:
+            break
 
-
+    #break
 
     loops_count += 1
-    print(tins[-1][-1])
