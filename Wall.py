@@ -14,30 +14,30 @@ class Wall:
         for component in self.components:
             self.thickness += component.thickness
 
-    def GetThickness(self):
+    def get_thickness(self):
         return self.thickness
 
-    def GetThicknessListPerComponent(self):
+    def get_thick_list_per_comp(self):
         thickness = []
         for i in range(len(self.components)):
             thickness.append(self.components[i].thickness)
         return thickness
 
-    def GetConductivityListPerComponent(self):
+    def get_conduct_list_per_comp(self):
         conductivity = []
         for i in range(len(self.components)):
             conductivity.append(self.components[i].conductivity)
         return conductivity
 
-    def GetStructComponentConductivity(self, totalX, deltaX, isFirst):
+    def get_comp_conductivity(self, total_x, delta_x, is_first):
         conductivity = []
-        thickness_list = self.GetThicknessListPerComponent()
-        conductivity_list = self.GetConductivityListPerComponent()
+        thickness_list = self.get_thick_list_per_comp()
+        conductivity_list = self.get_conduct_list_per_comp()
 
         for i in range(len(self.components)):
-            if sum(thickness_list[:i + 1]) >= totalX:
+            if sum(thickness_list[:i + 1]) >= total_x:
                 conductivity.append(conductivity_list[i])
-                if totalX - deltaX <= sum(thickness_list[:i]) and (totalX > deltaX or isFirst):
+                if total_x - delta_x <= sum(thickness_list[:i]) and (total_x > delta_x or is_first):
                     conductivity.append(conductivity_list[i - 1])
                 break
             else:
@@ -45,10 +45,10 @@ class Wall:
 
         return conductivity
 
-    def GetDensityAndHeatCap(self, totalX):
-        thickness_list = self.GetThicknessListPerComponent()
+    def get_density_heat_cap(self, total_x):
+        thickness_list = self.get_thick_list_per_comp()
         for i in range(len(self.components)):
-            if sum(thickness_list[:i + 1]) >= totalX:
+            if sum(thickness_list[:i + 1]) >= total_x:
                 return [self.components[i].density, self.components[i].heat_capacity]
                 break
             else:
@@ -60,7 +60,7 @@ class VerticalWall(Wall):
         super().__init__(components, length)
         self.height = height
 
-    def GetArea(self):
+    def get_area(self):
         return self.length * self.height
 
 
@@ -69,17 +69,17 @@ class RoofWall(Wall):
         super().__init__(components, length)
         self.width = width
 
-    def GetArea(self):
+    def get_area(self):
         return self.length * self.width
 
 
 class GlassPaneWall(VerticalWall):
-    def __init__(self, components, length, height, glass_pane):
+    def __init__(self, components, length, height, pane):
         super().__init__(components, length, height)
-        self.glass_pane = glass_pane
+        self.glass_pane = pane
 
-    def GetArea(self):
-        return self.length * self.height - glass_pane.GetArea()
+    def get_area(self):
+        return self.length * self.height - self.glass_pane.get_area()
 
 
 class GlassPane:
@@ -89,7 +89,7 @@ class GlassPane:
         self.heat_capacity = heat_capacity
         self.permeability = permeability
 
-    def GetArea(self):
+    def get_area(self):
         return self.length * self.height
 
 

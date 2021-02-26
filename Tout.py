@@ -5,17 +5,17 @@ TM = 22
 # Διακύμανση
 DR = 11
 # Η ώρα που η θερμοκρασία είναι μέγιστη
-TMAX = 16
+T_MAX = 16
 
 
-ToutTemp = []
-Tindex = []
+tout_temp = []
+t_index = []
 
 # Ξεκινάμε από 00:00 με το να είναι η ώρα.
 for i in range(24):
-    temp = TM + (DR / 2) * cos(2 * pi * (i - TMAX) / 24)
-    ToutTemp.append(temp)
-    Tindex.append(i)  # TODO remove
+    temp = TM + (DR / 2) * cos(2 * pi * (i - T_MAX) / 24)
+    tout_temp.append(temp)
+    t_index.append(i)
 
 # Θερμοκρασία εξωτερική ανά ώρα
-Tout = list(zip(Tindex, ToutTemp))
+t_out = list(zip(t_index, tout_temp))

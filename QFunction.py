@@ -1,140 +1,72 @@
 import numpy as np
 from Wall import walls
 
-def GetQ(M_LIST, WALL_TEMPERATURES, U_LIST, Tout, ABSORPTION, RADIATION, NODE_COUNT, TEMPS_INDEX, TIN):
-    ################      right array
+T = 0.8
 
-    right_array_first = [M_LIST[0][1] * WALL_TEMPERATURES[0][1] + U_LIST[0][1] * Tout + ABSORPTION * RADIATION]
+
+def get_value_from_item_count(i_pos, m_list, u_list):
+    m = m_list[i_pos][1]
+    first_u = u_list[i_pos][1]
+    second_u = u_list[i_pos + 1][1]
+    total = m + first_u + second_u
+    return total
+
+
+def get_left_array(node_count, m_list, u_list):
+    np_left = np.zeros((node_count, node_count))
+    for i in range(node_count):
+        np_left[i][i] = get_value_from_item_count(i, m_list, u_list)
+
+    for i in range(0, node_count - 1):
+        np_left[i][i + 1] = -u_list[i + 1][1]
+        np_left[i + 1][i] = np_left[i][i + 1]
+    return np_left
+
+
+def solve(m_list, wall_temps, u_list, t_in, right_array_first, right_array_middle, node_count):
+    right_array_last = [m_list[-1][1] * wall_temps[-1][1] + u_list[-1][1] * t_in]
+    right_list = [*right_array_first, *right_array_middle, *right_array_last]
+    np_right = np.array(right_list)
+    np_left = get_left_array(node_count, m_list, u_list)
+    return np.linalg.solve(np_left, np_right)
+
+
+def get_new_t_internal(radiation, walls_index, m_list, wall_temps, u_list, t_in, node_count, temp_indexes):
+    new_radiation = 0.1 * radiation * T * walls[walls_index["GLASSPANE"]].get_area() / walls[
+        walls_index["INTERNAL"]].get_area()
+    new_absorption = 0.9
+
+    right_array_first = [m_list[0][1] * wall_temps[0][1] + u_list[0][1] * t_in + new_absorption * new_radiation]
 
     right_array_middle = []
-
-    for i in range(1, NODE_COUNT - 1):
+    for i in range(1, node_count - 1):
         right_array_middle.append(
-            M_LIST[i][1] * WALL_TEMPERATURES[i][1] + U_LIST[i][1] * Tout + ABSORPTION * RADIATION)
+            m_list[i][1] * wall_temps[i][1] + u_list[i][1] * t_in + new_absorption * new_radiation)
+    solved = solve(m_list, wall_temps, u_list, t_in, right_array_first, right_array_middle, node_count)
+    return list(zip(temp_indexes, solved))
 
-    right_array_last = [M_LIST[-1][1] * WALL_TEMPERATURES[-1][1] + U_LIST[-1][1] * TIN]
 
-    right_list = [*right_array_first, *right_array_middle, *right_array_last]
-
-    np_right = np.array(right_list)
-
-    ################      left array
-
-    np_left = np.zeros((NODE_COUNT, NODE_COUNT))
-
-    def GetValueFromIterCountForMainDiagonal(iter):
-        m = M_LIST[iter][1]
-        first_u = U_LIST[iter][1]
-        second_u = U_LIST[iter + 1][1]
-        total = m + first_u + second_u
-        return total
-
-    for i in range(NODE_COUNT):
-        np_left[i][i] = GetValueFromIterCountForMainDiagonal(i)
-
-    for i in range(0, NODE_COUNT - 1):
-        np_left[i][i + 1] = -U_LIST[i + 1][1]
-        np_left[i + 1][i] = np_left[i][i + 1]
-
-    np.set_printoptions(suppress=True, linewidth=np.nan)
-
-    solved = np.linalg.solve(np_left, np_right)
-    new_T = list(zip(TEMPS_INDEX, solved))
+def get_q(m_list, wall_temps, u_list, t_out, absorption, radiation, node_count, temp_indexes, t_in):
+    right_array_first = [m_list[0][1] * wall_temps[0][1] + u_list[0][1] * t_out + absorption * radiation]
+    right_array_middle = []
+    for i in range(1, node_count - 1):
+        right_array_middle.append(
+            m_list[i][1] * wall_temps[i][1] + u_list[i][1] * t_out + absorption * radiation)
+    solved = solve(m_list, wall_temps, u_list, t_in, right_array_first, right_array_middle, node_count)
+    new_t = list(zip(temp_indexes, solved))
 
     # Θερμοροή εξωτερικών τοίχων
-    q_wall = U_LIST[-1][1] * (new_T[-1][1] - TIN)
-    return (q_wall, new_T)
+    q_wall = u_list[-1][1] * (new_t[-1][1] - t_in)
+    return q_wall, new_t
 
-def GetQInternal1(M_LIST, WALL_TEMPERATURES, U_LIST, ABSORPTION, RADIATION, NODE_COUNT, TEMPS_INDEX, TIN, walls_index):
-    ################      right array
-    t = 0.8
 
-    new_radiation = 0.1 * RADIATION * t * walls[walls_index["GLASSPANE"]].GetArea() / walls[walls_index["INTERNAL"]].GetArea()
-    new_absorption = 0.9
+def get_q_internal_1(m_list, wall_temps, u_list, absorption, radiation, node_count, temp_indexes, t_in, walls_index):
+    new_t = get_new_t_internal(radiation, walls_index, m_list, wall_temps, u_list, t_in, node_count, temp_indexes)
+    q_wall = u_list[0][1] * (new_t[0][1] - t_in)
+    return q_wall, new_t
 
-    right_array_first = [M_LIST[0][1] * WALL_TEMPERATURES[0][1] + U_LIST[0][1] * TIN + new_absorption * new_radiation]
 
-    right_array_middle = []
-
-    for i in range(1, NODE_COUNT - 1):
-        right_array_middle.append(
-            M_LIST[i][1] * WALL_TEMPERATURES[i][1] + U_LIST[i][1] * TIN + new_absorption * new_radiation)
-
-    right_array_last = [M_LIST[-1][1] * WALL_TEMPERATURES[-1][1] + U_LIST[-1][1] * TIN]
-
-    right_list = [*right_array_first, *right_array_middle, *right_array_last]
-
-    np_right = np.array(right_list)
-
-    ################      left array
-
-    np_left = np.zeros((NODE_COUNT, NODE_COUNT))
-
-    def GetValueFromIterCountForMainDiagonal(iter):
-        m = M_LIST[iter][1]
-        first_u = U_LIST[iter][1]
-        second_u = U_LIST[iter + 1][1]
-        total = m + first_u + second_u
-        return total
-
-    for i in range(NODE_COUNT):
-        np_left[i][i] = GetValueFromIterCountForMainDiagonal(i)
-
-    for i in range(0, NODE_COUNT - 1):
-        np_left[i][i + 1] = -U_LIST[i + 1][1]
-        np_left[i + 1][i] = np_left[i][i + 1]
-
-    np.set_printoptions(suppress=True, linewidth=np.nan)
-
-    solved = np.linalg.solve(np_left, np_right)
-    new_T = list(zip(TEMPS_INDEX, solved))
-
-    q_wall = U_LIST[0][1] * (new_T[0][1] - TIN)
-    return (q_wall, new_T)
-
-def GetQInternal2(M_LIST, WALL_TEMPERATURES, U_LIST, ABSORPTION, RADIATION, NODE_COUNT, TEMPS_INDEX, TIN, walls_index):
-    ################      right array
-    t = 0.8
-
-    new_radiation = 0.1 * RADIATION * t * walls[walls_index["GLASSPANE"]].GetArea() / walls[walls_index["INTERNAL"]].GetArea()
-    new_absorption = 0.9
-
-    right_array_first = [M_LIST[0][1] * WALL_TEMPERATURES[0][1] + U_LIST[0][1] * TIN + new_absorption * new_radiation]
-
-    right_array_middle = []
-
-    for i in range(1, NODE_COUNT - 1):
-        right_array_middle.append(
-            M_LIST[i][1] * WALL_TEMPERATURES[i][1] + U_LIST[i][1] * TIN + new_absorption * new_radiation)
-
-    right_array_last = [M_LIST[-1][1] * WALL_TEMPERATURES[-1][1] + U_LIST[-1][1] * TIN]
-
-    right_list = [*right_array_first, *right_array_middle, *right_array_last]
-
-    np_right = np.array(right_list)
-
-    ################      left array
-
-    np_left = np.zeros((NODE_COUNT, NODE_COUNT))
-
-    def GetValueFromIterCountForMainDiagonal(iter):
-        m = M_LIST[iter][1]
-        first_u = U_LIST[iter][1]
-        second_u = U_LIST[iter + 1][1]
-        total = m + first_u + second_u
-        return total
-
-    for i in range(NODE_COUNT):
-        np_left[i][i] = GetValueFromIterCountForMainDiagonal(i)
-
-    for i in range(0, NODE_COUNT - 1):
-        np_left[i][i + 1] = -U_LIST[i + 1][1]
-        np_left[i + 1][i] = np_left[i][i + 1]
-
-    np.set_printoptions(suppress=True, linewidth=np.nan)
-
-    solved = np.linalg.solve(np_left, np_right)
-    new_T = list(zip(TEMPS_INDEX, solved))
-
-    q_wall = U_LIST[-1][1] * (new_T[-1][1] - TIN)
+def get_q_internal_2(m_list, wall_temps, u_list, absorption, radiation, node_count, temp_indexes, t_in, walls_index):
+    new_t = get_new_t_internal(radiation, walls_index, m_list, wall_temps, u_list, t_in, node_count, temp_indexes)
+    q_wall = u_list[-1][1] * (new_t[-1][1] - t_in)
     return q_wall
