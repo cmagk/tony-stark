@@ -1,9 +1,10 @@
 from Wall import walls
 
+# Υπολογισμός συντελεστών U
+
 
 class U:
     def __init__(self, wall_index, node_count, wall_thickness, delta_x, h_out, h_in, u_pos):
-
         self.u_pos = u_pos
         self.h_in = h_in
         self.h_out = h_out

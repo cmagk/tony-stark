@@ -4,16 +4,25 @@ from Tout import t_out
 from Wall import walls
 from UFunction import U
 from MFunction import get_m
-from QFunction import get_q, get_q_internal_1, get_q_internal_2
+from QFunction import get_q, get_q_internal_1, get_q_internal_2, q_list
 import math
+# Απορροφητικότητα
 ABSORPTION = 0.8
+# Συντελεστής συναγωγής περιβάλλοντος
 H_OUT = 23
+# Συντελεστής συναγωγής εντός του χώρου
 H_IN = 8
+# Όγκος κτηρίου
 VOLUME = 10 * 25 * 3
+# Πυκνότητα αέρα
 R_AIR = 1.18
+# Θερμοχωρητικότητα αέρα
 C_AIR = 1005
+# Παροχή μάζας
 M_AIR = R_AIR * VOLUME
+# Αρχική εσωτερική θερμοκρασία
 tin = 22
+# Ακτινοβολία ανά ώρα
 RAD_LIST = [0, 0, 0, 0, 0, 0, 20, 40, 40, 50, 50, 100, 120, 250, 300, 200, 100, 50, 50, 40, 40, 0, 0, 0]
 WALLS_INDEX = {"NORTH": 0, "WEST": 1, "EAST": 2, "ROOF": 3, "INTERNAL": 4, "GLASSPANE": 5}
 
@@ -38,10 +47,10 @@ delta_x = NORTH_WALL_THICKNESS / node_count["EXTERNAL"]  # Δχ
 is_found = False
 loops_count = 1
 tins = []
-delta_t_tins = []
 temps_index_ext = [i for i in range(1, node_count["EXTERNAL"] + 1)]
 temps_index_roof = [i for i in range(1, node_count["ROOF"] + 1)]
 temps_index_internal = [i for i in range(1, node_count["INTERNAL"] + 1)]
+# Αρχική θερμοκρασία τοίχων
 temp = 20.5
 node_temperatures = {
     "EXTERNAL": {
@@ -65,6 +74,7 @@ while not is_found:
     counter = 0
     temps_close_counter = 0
     daily_tins = []
+    delta_t_tins = []
     while counter < 3600 * 24:
         delta_t_tins.append(counter)
         time_int = math.floor(counter / 3600)
@@ -153,11 +163,14 @@ while not is_found:
     print(tins[-1][-1])
 
     if loops_count > 2:
-        if tins[-1][-1] - tins[-2][-1] <= 0.00000000005:
+        if tins[-1][-1] - tins[-2][-1] <= 0.4:
             break
 
     loops_count += 1
-    break
+
+with open("q_list.txt", "w") as qlist:
+    for q_dict in q_list:
+        qlist.write(f"Type:{q_dict}\n")
 
 plt.ylabel('Εσωτερική θερμοκρασία αέρος')
 plt.xlabel('Χρόνος(sec)')

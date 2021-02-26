@@ -1,7 +1,13 @@
 import numpy as np
 from Wall import walls
 
+# Διαπερατότητα υαλοπίνακα
 T = 0.8
+
+# Ποσοστό 10% επί της ακτινοβολίας
+M = 0.1
+
+q_list = []
 
 
 def get_value_from_item_count(i_pos, m_list, u_list):
@@ -32,8 +38,9 @@ def solve(m_list, wall_temps, u_list, t_in, right_array_first, right_array_middl
 
 
 def get_new_t_internal(radiation, walls_index, m_list, wall_temps, u_list, t_in, node_count, temp_indexes):
-    new_radiation = 0.1 * radiation * T * walls[walls_index["GLASSPANE"]].get_area() / walls[
+    new_radiation = M * radiation * T * walls[walls_index["GLASSPANE"]].get_area() / walls[
         walls_index["INTERNAL"]].get_area()
+    # Απορροφητικότητα υαλοπίνακα
     new_absorption = 0.9
 
     right_array_first = [m_list[0][1] * wall_temps[0][1] + u_list[0][1] * t_in + new_absorption * new_radiation]
@@ -57,16 +64,19 @@ def get_q(m_list, wall_temps, u_list, t_out, absorption, radiation, node_count, 
 
     # Θερμοροή εξωτερικών τοίχων
     q_wall = u_list[-1][1] * (new_t[-1][1] - t_in)
+    q_list.append({"TYPE": "EXTERNAL", "VALUE": q_wall})
     return q_wall, new_t
 
 
 def get_q_internal_1(m_list, wall_temps, u_list, absorption, radiation, node_count, temp_indexes, t_in, walls_index):
     new_t = get_new_t_internal(radiation, walls_index, m_list, wall_temps, u_list, t_in, node_count, temp_indexes)
     q_wall = u_list[0][1] * (new_t[0][1] - t_in)
+    q_list.append({"TYPE": "INTERNAL", "VALUE": q_wall})
     return q_wall, new_t
 
 
 def get_q_internal_2(m_list, wall_temps, u_list, absorption, radiation, node_count, temp_indexes, t_in, walls_index):
     new_t = get_new_t_internal(radiation, walls_index, m_list, wall_temps, u_list, t_in, node_count, temp_indexes)
     q_wall = u_list[-1][1] * (new_t[-1][1] - t_in)
+    q_list.append({"TYPE": "INTERNAL", "VALUE": q_wall})
     return q_wall

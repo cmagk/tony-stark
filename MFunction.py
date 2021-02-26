@@ -1,5 +1,7 @@
 from Wall import walls
 
+# Υπολογισμός σταθερών M
+
 
 def get_m(delta_x, delta_t, node_count, wall_thickness, wall_index):
     distance = delta_x * 0.5

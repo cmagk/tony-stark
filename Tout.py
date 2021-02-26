@@ -11,7 +11,7 @@ T_MAX = 16
 tout_temp = []
 t_index = []
 
-# Ξεκινάμε από 00:00 με το να είναι η ώρα.
+# Ξεκινάμε από 00:00
 for i in range(24):
     temp = TM + (DR / 2) * cos(2 * pi * (i - T_MAX) / 24)
     tout_temp.append(temp)
