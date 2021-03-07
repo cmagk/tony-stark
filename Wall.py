@@ -50,7 +50,6 @@ class Wall:
         for i in range(len(self.components)):
             if sum(thickness_list[:i + 1]) >= total_x:
                 return [self.components[i].density, self.components[i].heat_capacity]
-                break
             else:
                 continue
 
